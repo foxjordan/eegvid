@@ -1,0 +1,16 @@
+.venv/
+.venv-*/
+__pycache__/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+# BioSemi binaries: obtain from BioSemi, don't commit
+packaging/drivers/*.dll
+packaging/drivers/*.dylib
+packaging/drivers/*.so
+packaging/drivers/*.so.*
+packaging/drivers/*.framework/
+# recordings
+*.bdf
+*.mp4
