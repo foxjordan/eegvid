@@ -21,7 +21,8 @@ without a Python setup.
   Darkfox Development, LLC); v0.1.0 notarized and accepted 2026-11-11. Only the dmg is stapled (the
   app inside is notarized but its first launch needs internet for the ticket check).
 - Windows installer: Inno Setup `packaging/windows/eegvid.iss`, built on Windows or by
-  `.github/workflows/build.yml` (windows + macos-15-intel jobs). Never built on Windows yet.
+  `.github/workflows/build.yml` (windows + macos-15-intel jobs; tests pass on both). Not yet run on a
+  real Windows PC. Releases: GitHub pre-release v0.1.0 (private repo) holds the notarized dmg + exe.
 - Align a session: `eegvid-align SESSION_DIR [--camera-latency-ms N]`; calibrate: `eegvid-align calibrate SESSION_DIR --frame N (--trigger | --channel A1)`
 
 ## Key design decisions
