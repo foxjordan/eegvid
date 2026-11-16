@@ -22,7 +22,8 @@ jobs:
           python-version: "3.12"
       - name: BioSemi library present?
         shell: bash
-        run: test -f packaging/drivers/RingBuffer.dll || echo "::warning::packaging/drivers/RingBuffer.dll missing: simulator-only build"
+        run: |
+          test -f packaging/drivers/RingBuffer.dll || echo "::warning::RingBuffer.dll missing - simulator-only build"
       - run: pip install -e ".[dev]"
       - run: pytest -q
       - run: pyinstaller packaging/eegvid.spec --noconfirm
@@ -46,7 +47,8 @@ jobs:
         with:
           python-version: "3.12"
       - name: BioSemi library present?
-        run: test -d packaging/drivers/BioSemiRingBuffer64.framework || echo "::warning::BioSemiRingBuffer64.framework missing: simulator-only build"
+        run: |
+          test -d packaging/drivers/BioSemiRingBuffer64.framework || echo "::warning::BioSemi framework missing - simulator-only build"
       - run: pip install -e ".[dev]"
       - run: pytest -q
       - run: |
