@@ -15,6 +15,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 VERSION=$(sed -n 's/^version = "\(.*\)"/\1/p' pyproject.toml)
+[[ "$VERSION" =~ ^[0-9]+(\.[0-9]+)*([-.][A-Za-z0-9]+)*$ ]] || { echo "Bad version '$VERSION'"; exit 1; }
 APP="dist/x86_64/EEG Video Recorder.app"
 
 if [[ "${1:-}" != "--no-build" ]]; then
@@ -54,10 +55,15 @@ if [[ "$SIGN_ID" == Developer\ ID* ]]; then
   codesign --force --timestamp --sign "$SIGN_ID" "$OUT"
   if xcrun notarytool history --keychain-profile "$PROFILE" >/dev/null 2>&1; then
     echo "Notarizing (usually a few minutes)..."
-    RESULT=$(xcrun notarytool submit "$OUT" --keychain-profile "$PROFILE" --wait 2>&1) || true
-    echo "$RESULT"
-    if ! grep -q "status: Accepted" <<<"$RESULT"; then
-      echo "Notarization was NOT accepted. Details: xcrun notarytool log <id> --keychain-profile $PROFILE"
+    NOTA_JSON=$(mktemp)
+    xcrun notarytool submit "$OUT" --keychain-profile "$PROFILE" --wait --output-format json > "$NOTA_JSON" ||
+      { cat "$NOTA_JSON"; echo "notarytool failed"; exit 1; }
+    STATUS=$(plutil -extract status raw -o - "$NOTA_JSON" 2>/dev/null || true)
+    SUB_ID=$(plutil -extract id raw -o - "$NOTA_JSON" 2>/dev/null || true)
+    rm -f "$NOTA_JSON"
+    echo "Notarization status: ${STATUS:-unknown} (submission ${SUB_ID:-?})"
+    if [[ "$STATUS" != "Accepted" ]]; then
+      echo "Notarization was NOT accepted. Details: xcrun notarytool log $SUB_ID --keychain-profile $PROFILE"
       exit 1
     fi
     xcrun stapler staple "$OUT"
