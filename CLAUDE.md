@@ -13,6 +13,15 @@ without a Python setup.
 - Build Intel Mac app (the one that talks to BioSemi hardware on a Mac): one-time
   `arch -x86_64 /Library/Frameworks/Python.framework/Versions/3.10/bin/python3.10 -m venv .venv-x86_64 && arch -x86_64 .venv-x86_64/bin/pip install -e ".[dev]"`,
   then `arch -x86_64 .venv-x86_64/bin/pyinstaller packaging/eegvid.spec --noconfirm --distpath dist/x86_64 --workpath build/x86_64`
+- Mac installer for the lab: `packaging/macos/make_dmg.sh` (builds the Intel app, then
+  dist/EEGVideoRecorder-<version>-mac.dmg with packaging/INSTALL.txt as "Read Me First"). If a
+  "Developer ID Application" cert is in the keychain it signs (`packaging/macos/sign_app.sh`: hardened
+  runtime, inside-out by path depth, `entitlements.plist` incl. camera) and, with notarytool profile
+  `eegvid-notary`, notarizes + staples. Both are set up on the dev Mac (Developer ID Application:
+  Darkfox Development, LLC); v0.1.0 notarized and accepted 2026-11-11. Only the dmg is stapled (the
+  app inside is notarized but its first launch needs internet for the ticket check).
+- Windows installer: Inno Setup `packaging/windows/eegvid.iss`, built on Windows or by
+  `.github/workflows/build.yml` (windows + macos-15-intel jobs). Never built on Windows yet.
 - Align a session: `eegvid-align SESSION_DIR [--camera-latency-ms N]`; calibrate: `eegvid-align calibrate SESSION_DIR --frame N (--trigger | --channel A1)`
 
 ## Key design decisions
@@ -22,7 +31,8 @@ without a Python setup.
   per setup with `calibrate`, not per session. No clap/tap is needed in routine sessions.
 - BioSemi USB protocol follows https://www.biosemi.com/faq/make_own_acquisition_software.htm
   via ctypes to BioSemi's RingBuffer library (`biosemi/ringbuffer.py`). The library is not
-  committed; it goes in `packaging/drivers/`. Items marked `VERIFY` (READ_POINTER units,
+  committed except RingBuffer.dll (Win64) and BioSemiRingBuffer64.framework (Mac) in
+  `packaging/drivers/`, which the installer builds need; the GitHub repo must stay private. Items marked `VERIFY` (READ_POINTER units,
   speed-mode bits/rates, EXG positions) are not yet confirmed on real hardware.
 - Sample rate is set by the AD-box speed-mode switch, never by software. "Save sample rate"
   = ActiView-style decimation (`dsp.Decimator`): zero-delay-compensated FIR, saved sample k ==
@@ -70,4 +80,3 @@ without a Python setup.
   the SDK's Windows64/RingBuffer_SyncTest.exe first.
 - The user's original scripts (tap-artifact sync with MNE, OpenCV recorder) were
   replaced by `analysis/align.py` and `video/camera.py`.
-- No git commits yet.

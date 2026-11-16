@@ -5,12 +5,16 @@ __pycache__/
 build/
 dist/
 .pytest_cache/
-# BioSemi binaries: obtain from BioSemi, don't commit
+# BioSemi binaries: only the two the installers need are committed (this repo is
+# private; keep it that way). Anything else dropped in drivers/ stays local.
 packaging/drivers/*.dll
+!packaging/drivers/RingBuffer.dll
 packaging/drivers/*.dylib
 packaging/drivers/*.so
 packaging/drivers/*.so.*
 packaging/drivers/*.framework/
+!packaging/drivers/BioSemiRingBuffer64.framework/
+.DS_Store
 # recordings
 *.bdf
 *.mp4

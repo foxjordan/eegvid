@@ -8,10 +8,12 @@
 # The target follows the running Python; override with EEGVID_TARGET_ARCH.
 import os
 import platform
+import re
 import sys
 from pathlib import Path
 
 root = Path(SPECPATH).parent
+version = re.search(r'^version\s*=\s*"([^"]+)"', (root / "pyproject.toml").read_text(), re.M).group(1)
 drivers_dir = root / "packaging" / "drivers"
 lib_suffix = {"win32": ".dll", "darwin": ".dylib"}.get(sys.platform, ".so")
 drivers = [(str(p), "drivers") for p in drivers_dir.glob("*")
@@ -54,5 +56,8 @@ if sys.platform == "darwin":
         info_plist={
             "NSCameraUsageDescription": "Records video of the participant during EEG sessions.",
             "NSHighResolutionCapable": True,
+            "CFBundleShortVersionString": version,
+            "CFBundleVersion": version,
+            "CFBundleDisplayName": "EEG Video Recorder",
         },
     )
