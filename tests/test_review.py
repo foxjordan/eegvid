@@ -285,18 +285,20 @@ def test_review_window_keys_frames_and_loop(session_dir, tmp_path, monkeypatch):
         if not win.isActiveWindow():
             pytest.skip("offscreen platform did not activate the window")
         ft = win.s.frame_times
-        win.set_time(float(ft[30]))
+        k = len(ft) // 2  # slow machines write fewer frames into the fixture
+        assert k >= 2
+        win.set_time(float(ft[k]))
         # a number box has focus (e.g. after changing the Window): keys still drive playback
         win.window.setFocus()
         app.processEvents()
         before = win.window.value()
         press(Qt.Key_Right)
-        assert win._frame_idx == 31 and abs(win.t - ft[31]) < 1e-9
+        assert win._frame_idx == k + 1 and abs(win.t - ft[k + 1]) < 1e-9
         press(Qt.Key_Left)
         press(Qt.Key_Left)
-        assert win._frame_idx == 29
+        assert win._frame_idx == k - 1
         press(Qt.Key_Right, Qt.ShiftModifier)
-        assert abs(win.t - min(ft[29] + 1, win.s.duration)) < 1e-9  # clipped at the end
+        assert abs(win.t - min(ft[k - 1] + 1, win.s.duration)) < 1e-9  # clipped at the end
         assert win.window.value() == before
         press(Qt.Key_Space)
         assert win._play_timer.isActive()
