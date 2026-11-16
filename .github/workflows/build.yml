@@ -1,34 +1,60 @@
 name: build
 
+# Builds the lab installers. Run it from the Actions tab ("Run workflow") or by
+# pushing a tag such as v0.1.0. Download the results from the run's Artifacts.
+#
+# The BioSemi libraries must be in packaging/drivers/ in the repository
+# (RingBuffer.dll for Windows, BioSemiRingBuffer64.framework for Mac); keep the
+# repository private. Without them the apps build, but only the simulator works.
+
 on:
   push:
     tags: ["v*"]
   workflow_dispatch:
 
 jobs:
-  build:
-    strategy:
-      matrix:
-        # macos-15-intel: BioSemi's Mac library is Intel-only, so this is the build
-        # that can talk to hardware (runs under Rosetta on Apple Silicon until macOS 28).
-        # macos-latest (Apple Silicon) builds a simulator-only app.
-        os: [windows-latest, macos-15-intel, macos-latest]
-    runs-on: ${{ matrix.os }}
+  windows:
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: BioSemi library present?
+        shell: bash
+        run: |
+          test -f packaging/drivers/RingBuffer.dll || echo "::warning::RingBuffer.dll missing - simulator-only build"
       - run: pip install -e ".[dev]"
       - run: pytest -q
       - run: pyinstaller packaging/eegvid.spec --noconfirm
-      - name: Zip (Windows)
-        if: runner.os == 'Windows'
-        run: Compress-Archive -Path dist/EEGVideoRecorder -DestinationPath EEGVideoRecorder-windows-${{ runner.arch }}.zip
-      - name: Zip (macOS)
-        if: runner.os == 'macOS'
-        run: ditto -c -k --keepParent "dist/EEG Video Recorder.app" EEGVideoRecorder-macos-${{ runner.arch }}.zip
+      - name: Installer
+        shell: pwsh
+        run: |
+          $v = (Select-String -Path pyproject.toml -Pattern '^version = "(.+)"').Matches[0].Groups[1].Value
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" "/DAppVersion=$v" packaging\windows\eegvid.iss
       - uses: actions/upload-artifact@v4
         with:
-          name: EEGVideoRecorder-${{ runner.os }}-${{ runner.arch }}
-          path: EEGVideoRecorder-*.zip
+          name: EEGVideoRecorder-windows
+          path: dist/EEGVideoRecorder-*-windows-setup.exe
+
+  mac:
+    # Intel runner: BioSemi's Mac library is Intel-only. The app also runs on
+    # Apple Silicon through Rosetta (until macOS 28).
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: BioSemi library present?
+        run: |
+          test -d packaging/drivers/BioSemiRingBuffer64.framework || echo "::warning::BioSemi framework missing - simulator-only build"
+      - run: pip install -e ".[dev]"
+      - run: pytest -q
+      - run: |
+          python -m PyInstaller packaging/eegvid.spec --noconfirm --distpath dist/x86_64 --workpath build/x86_64
+          packaging/macos/make_dmg.sh --no-build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: EEGVideoRecorder-mac
+          path: dist/EEGVideoRecorder-*-mac*.dmg

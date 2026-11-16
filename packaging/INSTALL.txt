@@ -1,0 +1,51 @@
+EEG VIDEO RECORDER - INSTALLING
+===============================
+
+This is an early test version for the lab.
+
+
+MAC
+---
+1. Open the .dmg file and drag "EEG Video Recorder" onto "Applications".
+2. Open Applications and double-click EEG Video Recorder. The first time,
+   macOS asks whether you want to open an app downloaded from the internet.
+   Click Open.
+3. On Apple Silicon Macs (M1 or newer), macOS may ask to install Rosetta.
+   Click Install. The BioSemi driver only exists for Intel, so the app runs
+   through Rosetta, just like ActiView does.
+4. The first time you record, macOS asks for camera access. Click Allow.
+   (If you clicked Don't Allow: System Settings > Privacy & Security >
+   Camera, and turn on EEG Video Recorder.)
+
+Nothing else is needed on a Mac: the BioSemi USB library is inside the app,
+and ActiView does not need to be installed.
+
+
+WINDOWS
+-------
+1. Run the EEGVideoRecorder-...-setup.exe installer.
+   This test version isn't signed for Windows yet. If Windows shows "Windows protected your PC", click "More info" and then
+   "Run anyway".
+2. The BioSemi USB driver must be installed on the PC. If ActiView already
+   works on this PC with the ActiveTwo, it is. Otherwise install it from
+   BioSemi's ActiView download first.
+3. Start "EEG Video Recorder" from the Start menu. If Windows asks whether
+   the app may use the camera, allow it.
+
+
+TRYING IT WITHOUT THE EEG HARDWARE
+----------------------------------
+Choose "Simulator" as the device and click Connect. Everything works with
+made-up EEG, so you can practise recording, markers and the review window.
+
+
+WHERE RECORDINGS GO
+-------------------
+Each recording is a folder (EEG, video, markers and session details) inside
+the folder chosen in the app. Open one later with "Review a session...".
+
+
+PROBLEMS
+--------
+Note what you were doing, what you expected and what happened (a screenshot
+helps), and send it to the person who gave you the app.

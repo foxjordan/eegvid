@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Hardened-runtime exceptions (required for notarization). -->
+<plist version="1.0">
+<dict>
+    <!-- The hardened runtime blocks the camera unless this is declared. -->
+    <key>com.apple.security.device.camera</key>
+    <true/>
+    <!-- Python (ctypes/libffi, used for the BioSemi library) needs writable+executable memory. -->
+    <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+    <true/>
+    <key>com.apple.security.cs.allow-jit</key>
+    <true/>
+    <!-- No disable-library-validation: sign_app.sh re-signs every bundled library
+         (BioSemi framework and libusb included) with the same Developer ID. -->
+</dict>
+</plist>
