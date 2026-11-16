@@ -128,12 +128,14 @@ def test_marker_editing_roundtrip(session_dir, tmp_path):
     shutil.copytree(session_dir, folder)
     original = (folder / "markers.csv").read_text()
     s = ReviewSession(folder)
+    live_t = s.marker_time(s.markers[0])  # depends on how fast the machine recorded the fixture
     s.markers[0].label = "eyes closed"
     s.markers[0].note = "participant yawned"
-    s.new_marker(1.5, "artifact")
+    artifact_t = (live_t + s.duration) / 2
+    s.new_marker(artifact_t, "artifact")
     s.save_markers()
     s.save_review_notes("Good session.\nSome movement at the end.")
-    s.new_marker(0.5, "second edit")
+    s.new_marker(live_t / 2, "second edit")
     s.save_markers()
 
     assert (folder / MARKERS_BACKUP).read_text() == original  # first-save backup, never overwritten
@@ -141,7 +143,7 @@ def test_marker_editing_roundtrip(session_dir, tmp_path):
     assert [(m.label, m.source) for m in again.markers] == [
         ("second edit", "review"), ("eyes closed", "recorded"), ("artifact", "review")]
     assert again.markers[1].note == "participant yawned"
-    assert abs(again.marker_time(again.markers[2]) - 1.5) < 1e-6
+    assert abs(again.marker_time(again.markers[2]) - artifact_t) < 1e-6
     assert again.review_notes.startswith("Good session.")
     assert again.meta["eeg"]["sample_rate"] == 2048  # rest of session.json intact
     align_session(folder)  # the offline alignment tool still reads the edited file
@@ -294,7 +296,7 @@ def test_review_window_keys_frames_and_loop(session_dir, tmp_path, monkeypatch):
         press(Qt.Key_Left)
         assert win._frame_idx == 29
         press(Qt.Key_Right, Qt.ShiftModifier)
-        assert abs(win.t - (ft[29] + 1)) < 1e-9
+        assert abs(win.t - min(ft[29] + 1, win.s.duration)) < 1e-9  # clipped at the end
         assert win.window.value() == before
         press(Qt.Key_Space)
         assert win._play_timer.isActive()

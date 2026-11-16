@@ -57,4 +57,4 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: EEGVideoRecorder-mac
-          path: dist/EEGVideoRecorder-*-mac.dmg
+          path: dist/EEGVideoRecorder-*-mac*.dmg

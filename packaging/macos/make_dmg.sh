@@ -47,18 +47,31 @@ ditto "$APP" "$STAGE/EEG Video Recorder.app"
 ln -s /Applications "$STAGE/Applications"
 cp packaging/INSTALL.txt "$STAGE/Read Me First.txt"
 OUT="dist/EEGVideoRecorder-$VERSION-mac.dmg"
-rm -f "$OUT"
+rm -f "$OUT" "${OUT%.dmg}-UNSIGNED.dmg"
 hdiutil create -volname "EEG Video Recorder $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$OUT" >/dev/null
+NOTARIZED=0
 if [[ "$SIGN_ID" == Developer\ ID* ]]; then
   codesign --force --timestamp --sign "$SIGN_ID" "$OUT"
   if xcrun notarytool history --keychain-profile "$PROFILE" >/dev/null 2>&1; then
     echo "Notarizing (usually a few minutes)..."
-    xcrun notarytool submit "$OUT" --keychain-profile "$PROFILE" --wait
+    RESULT=$(xcrun notarytool submit "$OUT" --keychain-profile "$PROFILE" --wait 2>&1) || true
+    echo "$RESULT"
+    if ! grep -q "status: Accepted" <<<"$RESULT"; then
+      echo "Notarization was NOT accepted. Details: xcrun notarytool log <id> --keychain-profile $PROFILE"
+      exit 1
+    fi
     xcrun stapler staple "$OUT"
     spctl --assess --type open --context context:primary-signature -vv "$OUT"
-    spctl --assess --type execute -vv "$APP" || true
+    spctl --assess --type execute -vv "$APP"
+    NOTARIZED=1
   else
-    echo "No notarytool profile '$PROFILE': signed but NOT notarized (macOS will still warn)."
+    echo "No notarytool profile '$PROFILE': signed but NOT notarized."
   fi
+fi
+if [[ $NOTARIZED == 0 ]]; then
+  # Never let a build macOS will warn about pass for the release.
+  mv "$OUT" "${OUT%.dmg}-UNSIGNED.dmg"
+  OUT="${OUT%.dmg}-UNSIGNED.dmg"
+  echo "NOTE: not notarized; lab Macs will warn when opening $OUT"
 fi
 echo "Built $OUT ($(du -h "$OUT" | cut -f1))"
